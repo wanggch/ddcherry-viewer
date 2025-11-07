@@ -191,37 +191,124 @@ function exportSvg() {
 async function exportPng() {
   if (!hasDiagram.value) return
 
-  const svgContent = renderedSvg.value
-  const svgBlob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' })
-  const url = URL.createObjectURL(svgBlob)
+  if (!diagramRef.value) return
+
+  const svgElement = diagramRef.value.querySelector('svg')
+  if (!svgElement) {
+    errorMessage.value = '导出 PNG 失败：未找到 SVG 元素'
+    return
+  }
 
   try {
-    const img = new Image()
-    const loadImage = () =>
-      new Promise((resolve, reject) => {
-        img.onload = resolve
-        img.onerror = reject
-        img.src = url
-      })
-
-    await loadImage()
-
+    const dataUrl = svgToDataUrl(svgElement)
+    const image = await loadSvgImage(dataUrl)
+    const { width, height } = getSvgDimensions(svgElement)
+    const ratio = window.devicePixelRatio || 1
     const canvas = document.createElement('canvas')
-    canvas.width = img.width
-    canvas.height = img.height
+    canvas.width = Math.max(Math.round(width * ratio), 1)
+    canvas.height = Math.max(Math.round(height * ratio), 1)
     const context = canvas.getContext('2d')
-    context.drawImage(img, 0, 0)
 
-    const pngUrl = canvas.toDataURL('image/png')
+    if (!context) {
+      throw new Error('无法创建画布上下文')
+    }
+
+    context.setTransform(ratio, 0, 0, ratio, 0, 0)
+    context.clearRect(0, 0, width, height)
+    context.drawImage(image, 0, 0, width, height)
+
+    const pngBlob = await canvasToBlob(canvas)
+    const pngUrl = URL.createObjectURL(pngBlob)
     const link = document.createElement('a')
     link.href = pngUrl
     link.download = 'diagram.png'
     link.click()
+    URL.revokeObjectURL(pngUrl)
   } catch (error) {
     errorMessage.value = `导出 PNG 失败：${error?.message ?? '未知错误'}`
-  } finally {
-    URL.revokeObjectURL(url)
   }
+}
+
+function svgToDataUrl(svgElement) {
+  const sanitized = sanitizeSvg(svgElement)
+  const serializer = new XMLSerializer()
+  const svgString = serializer.serializeToString(sanitized)
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`
+}
+
+function sanitizeSvg(svgElement) {
+  const clone = svgElement.cloneNode(true)
+
+  clone.querySelectorAll('style').forEach((styleNode) => {
+    styleNode.textContent = styleNode.textContent.replace(/@import\s+[^;]+;?/gi, '')
+  })
+
+  clone.querySelectorAll('link, script').forEach((node) => node.remove())
+
+  if (!clone.getAttribute('xmlns')) {
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  }
+
+  if (!clone.getAttribute('xmlns:xlink')) {
+    clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+  }
+
+  return clone
+}
+
+function getSvgDimensions(svgElement) {
+  const width = parseSize(svgElement.getAttribute('width'))
+  const height = parseSize(svgElement.getAttribute('height'))
+
+  if (width && height) {
+    return { width, height }
+  }
+
+  const viewBox = svgElement.getAttribute('viewBox')
+  if (viewBox) {
+    const values = viewBox.split(/[ ,]+/).map(Number)
+    if (values.length === 4) {
+      const [, , vbWidth, vbHeight] = values
+      if (vbWidth && vbHeight) {
+        return { width: vbWidth, height: vbHeight }
+      }
+    }
+  }
+
+  const rect = svgElement.getBoundingClientRect()
+  if (rect.width && rect.height) {
+    return { width: rect.width, height: rect.height }
+  }
+
+  return { width: 1024, height: 768 }
+}
+
+function parseSize(value) {
+  if (!value || value.includes('%')) return null
+  const parsed = parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function loadSvgImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error('SVG 图像加载失败'))
+    image.src = dataUrl
+  })
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob)
+      } else {
+        reject(new Error('PNG 数据生成失败'))
+      }
+    }, 'image/png')
+  })
 }
 
 function applyThemeToDocument(value) {

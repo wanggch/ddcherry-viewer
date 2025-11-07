@@ -75,7 +75,7 @@
             ref="containerRef"
             class="relative flex min-h-full w-full items-start justify-center rounded-3xl border border-white/60 bg-gradient-to-br from-white/80 via-white/60 to-white/20 p-8 shadow-2xl ring-1 ring-black/5 transition dark:border-gray-800/60 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-800/40 dark:ring-white/10"
           >
-            <div v-if="!hasDiagram && !errorMessage" class="text-center text-sm text-gray-500 dark:text-gray-400">
+            <div v-if="!hasDiagram && !errorMessage" class="w-full text-center text-sm text-gray-500 dark:text-gray-400">
               点击「渲染图表」按钮，即可在此处预览 SVG。
             </div>
             <div
@@ -84,6 +84,7 @@
             >
               {{ errorMessage }}
             </div>
+            <div ref="diagramRef" class="flex w-full justify-center"></div>
           </div>
         </div>
       </section>
@@ -105,6 +106,7 @@ const DEFAULT_EXAMPLE = `graph TD;
 `
 
 const containerRef = ref(null)
+const diagramRef = ref(null)
 const code = ref(DEFAULT_EXAMPLE)
 const theme = ref('default')
 const errorMessage = ref('')
@@ -142,7 +144,7 @@ function persistState(key, value) {
 }
 
 async function renderDiagram() {
-  if (!containerRef.value) return
+  if (!containerRef.value || !diagramRef.value) return
 
   isRendering.value = true
   errorMessage.value = ''
@@ -151,7 +153,7 @@ async function renderDiagram() {
     mermaid.initialize({ startOnLoad: false, theme: theme.value })
     const { svg } = await mermaid.render('mermaid-preview', code.value)
     renderedSvg.value = svg
-    containerRef.value.innerHTML = svg
+    diagramRef.value.innerHTML = svg
     await nextTick()
     containerRef.value.classList.remove('animate-fadeIn')
     // Force reflow to restart animation when re-rendering
@@ -159,7 +161,7 @@ async function renderDiagram() {
     containerRef.value.classList.add('animate-fadeIn')
   } catch (error) {
     renderedSvg.value = ''
-    containerRef.value.innerHTML = ''
+    diagramRef.value.innerHTML = ''
     errorMessage.value = `渲染错误：${error?.message ?? '未知错误'}`
   } finally {
     isRendering.value = false

@@ -61,12 +61,26 @@
             <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">支持实时语法高亮与主题切换。</p>
           </div>
         </div>
-        <textarea
-          v-model="code"
-          spellcheck="false"
-          placeholder="在此粘贴或编写 Mermaid 代码..."
-          class="flex-1 resize-none overflow-auto bg-transparent px-5 py-4 font-mono text-sm leading-relaxed text-gray-700 outline-none transition placeholder:text-gray-400 focus:bg-white/80 focus:shadow-inner dark:text-gray-100 dark:placeholder:text-gray-500"
-        ></textarea>
+        <div class="flex-1 overflow-hidden">
+          <div class="relative flex h-full w-full">
+            <div
+              ref="lineNumbersRef"
+              aria-hidden="true"
+              class="pointer-events-none flex-shrink-0 overflow-hidden border-r border-white/40 bg-white/60 px-4 py-4 text-right font-mono text-xs leading-relaxed text-gray-400 dark:border-gray-800/60 dark:bg-gray-900/40 dark:text-gray-500 md:min-w-[3rem]"
+            >
+              <div v-for="line in lineNumbers" :key="line" class="tabular-nums">
+                {{ line }}
+              </div>
+            </div>
+            <textarea
+              v-model="code"
+              spellcheck="false"
+              placeholder="在此粘贴或编写 Mermaid 代码..."
+              class="flex-1 h-full resize-none overflow-auto bg-transparent px-5 py-4 pl-16 font-mono text-sm leading-relaxed text-gray-700 outline-none transition placeholder:text-gray-400 focus:bg-white/80 focus:shadow-inner dark:text-gray-100 dark:placeholder:text-gray-500"
+              @scroll="syncScroll"
+            ></textarea>
+          </div>
+        </div>
       </section>
 
       <section class="flex w-full flex-col overflow-hidden md:w-1/2">
@@ -107,6 +121,7 @@ const DEFAULT_EXAMPLE = `graph TD;
 
 const containerRef = ref(null)
 const diagramRef = ref(null)
+const lineNumbersRef = ref(null)
 const code = ref(DEFAULT_EXAMPLE)
 const theme = ref('default')
 const errorMessage = ref('')
@@ -122,6 +137,15 @@ const themes = [
 ]
 
 const hasDiagram = computed(() => Boolean(renderedSvg.value))
+const lineNumbers = computed(() => {
+  const totalLines = code.value.split('\n').length
+  return Array.from({ length: Math.max(totalLines, 1) }, (_, index) => index + 1)
+})
+
+function syncScroll(event) {
+  if (!lineNumbersRef.value) return
+  lineNumbersRef.value.scrollTop = event.target.scrollTop
+}
 
 function loadPersistedState() {
   if (typeof window === 'undefined') return

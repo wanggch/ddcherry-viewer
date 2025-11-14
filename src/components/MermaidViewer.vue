@@ -58,7 +58,6 @@
         <div class="flex items-center justify-between border-b border-white/40 px-5 py-4 text-gray-600 dark:border-gray-800/70 dark:text-gray-300">
           <div>
             <h2 class="text-sm font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">Mermaid 代码</h2>
-            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">支持实时语法高亮与主题切换。</p>
           </div>
         </div>
         <textarea

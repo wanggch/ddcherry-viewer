@@ -65,7 +65,7 @@
             <div
               ref="lineNumbersRef"
               aria-hidden="true"
-              class="pointer-events-none flex-shrink-0 overflow-hidden border-r border-white/40 bg-white/60 px-4 py-4 text-right font-mono text-xs leading-relaxed text-gray-400 dark:border-gray-800/60 dark:bg-gray-900/40 dark:text-gray-500 md:min-w-[3rem]"
+              class="pointer-events-none flex-shrink-0 overflow-hidden border-r border-white/40 bg-white/60 px-4 py-4 text-right font-mono text-sm leading-6 text-gray-400 dark:border-gray-800/60 dark:bg-gray-900/40 dark:text-gray-500 md:min-w-[3rem]"
             >
               <div v-for="line in lineNumbers" :key="line" class="tabular-nums">
                 {{ line }}
@@ -75,7 +75,7 @@
               v-model="code"
               spellcheck="false"
               placeholder="在此粘贴或编写 Mermaid 代码..."
-              class="flex-1 h-full resize-none overflow-auto bg-transparent px-5 py-4 pl-16 font-mono text-sm leading-relaxed text-gray-700 outline-none transition placeholder:text-gray-400 focus:bg-white/80 focus:shadow-inner dark:text-gray-100 dark:placeholder:text-gray-500"
+              class="flex-1 h-full resize-none overflow-auto bg-transparent px-5 py-4 pl-16 font-mono text-sm leading-6 text-gray-700 outline-none transition placeholder:text-gray-400 focus:bg-white/80 focus:shadow-inner dark:text-gray-100 dark:placeholder:text-gray-500"
               @scroll="syncScroll"
             ></textarea>
           </div>

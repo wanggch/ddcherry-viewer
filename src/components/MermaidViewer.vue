@@ -10,54 +10,121 @@
         <h1 class="text-xl font-semibold tracking-wide">Mermaid 在线可视化工具</h1>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">实时编辑、渲染并导出流程图与结构图。</p>
       </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <button
-          class="rounded-full border border-transparent bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-lg transition-all duration-200 hover:from-purple-600 hover:to-indigo-600 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
-          type="button"
-          @click="resetToExample"
-        >
-          恢复示例
-        </button>
-        <button
-          class="rounded-full border border-indigo-300/60 px-4 py-2 text-sm font-medium text-indigo-600 transition-all duration-200 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-indigo-500/40 dark:bg-indigo-500/20 dark:text-indigo-200 dark:hover:bg-indigo-500/30 dark:focus:ring-offset-gray-900"
-          type="button"
-          :disabled="!hasDiagram"
-          @click="exportSvg"
-        >
-          导出 SVG
-        </button>
-        <button
-          class="rounded-full border border-sky-300/60 px-4 py-2 text-sm font-medium text-sky-600 transition-all duration-200 hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-sky-500/40 dark:bg-sky-500/20 dark:text-sky-200 dark:hover:bg-sky-500/30 dark:focus:ring-offset-gray-900"
-          type="button"
-          :disabled="!hasDiagram"
-          @click="exportPng"
-        >
-          导出 PNG
-        </button>
-        <select
-          v-model="theme"
-          class="rounded-lg border border-gray-300 bg-white/80 px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-200"
-        >
-          <option v-for="themeOption in themes" :key="themeOption.value" :value="themeOption.value">
-            {{ themeOption.label }}
-          </option>
-        </select>
-        <button
-          class="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:scale-[1.03] hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400 dark:focus:ring-offset-gray-900"
-          type="button"
-          :disabled="isRendering"
-          @click="renderDiagram"
-        >
-          {{ isRendering ? '渲染中…' : '渲染图表' }}
-        </button>
-      </div>
     </header>
 
     <main class="flex flex-1 flex-col overflow-hidden md:flex-row">
       <section class="flex w-full flex-col overflow-hidden border-b border-white/40 bg-white/60 backdrop-blur md:w-1/2 md:border-b-0 md:border-r dark:border-gray-800/80 dark:bg-gray-900/50">
-        <div class="flex items-center justify-between border-b border-white/40 px-5 py-4 text-gray-600 dark:border-gray-800/70 dark:text-gray-300">
+        <div
+          class="flex items-center justify-between border-b border-white/40 px-5 py-4 text-gray-600 dark:border-gray-800/70 dark:text-gray-300"
+        >
           <div>
             <h2 class="text-sm font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">Mermaid 代码</h2>
+          </div>
+        </div>
+        <div
+          ref="toolbarRef"
+          class="flex flex-wrap items-center gap-2 border-b border-white/40 px-5 py-3 dark:border-gray-800/70"
+        >
+          <button
+            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:text-indigo-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-indigo-500/50 dark:hover:text-indigo-300"
+            type="button"
+            :disabled="!hasDiagram"
+            title="导出 SVG"
+            aria-label="导出 SVG"
+            @click.stop="exportSvg"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 10l5 5m0 0l5-5m-5 5V3" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 21h14" />
+            </svg>
+          </button>
+          <button
+            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-300 hover:text-sky-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-sky-500/50 dark:hover:text-sky-300"
+            type="button"
+            :disabled="!hasDiagram"
+            title="导出 PNG"
+            aria-label="导出 PNG"
+            @click.stop="exportPng"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5l3.5-3.5m0 0L12 9.5m3.5 3.5H8" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+            </svg>
+          </button>
+          <button
+            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-emerald-500/50 dark:hover:text-emerald-300"
+            type="button"
+            title="格式化代码"
+            aria-label="格式化代码"
+            @click.stop="formatCode"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 4h12M6 8h6m-6 4h12m-6 4h6m-6 4h12" />
+            </svg>
+          </button>
+          <div class="relative">
+            <button
+              class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:text-violet-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-violet-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-violet-500/50 dark:hover:text-violet-300"
+              type="button"
+              title="选择主题"
+              aria-label="选择主题"
+              @click.stop="toggleThemeMenu"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
+                />
+              </svg>
+            </button>
+            <transition name="fade">
+              <div
+                v-if="showThemeMenu"
+                class="absolute right-0 z-20 mt-2 min-w-[9rem] overflow-hidden rounded-xl border border-gray-200 bg-white/95 text-sm shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-900/90"
+              >
+                <button
+                  v-for="themeOption in themes"
+                  :key="themeOption.value"
+                  class="flex w-full items-center justify-between gap-2 px-4 py-2 text-left transition hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-200"
+                  type="button"
+                  @click="selectTheme(themeOption.value)"
+                >
+                  <span>{{ themeOption.label }}</span>
+                  <span v-if="theme === themeOption.value" class="text-xs text-indigo-500 dark:text-indigo-300">●</span>
+                </button>
+              </div>
+            </transition>
+          </div>
+          <div class="relative">
+            <button
+              class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:text-amber-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-amber-500/50 dark:hover:text-amber-300"
+              type="button"
+              title="模板示例"
+              aria-label="模板示例"
+              @click.stop="toggleTemplateMenu"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+            </button>
+            <transition name="fade">
+              <div
+                v-if="showTemplateMenu"
+                class="absolute right-0 z-20 mt-2 min-w-[12rem] overflow-hidden rounded-xl border border-gray-200 bg-white/95 text-sm shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-900/90"
+              >
+                <button
+                  v-for="templateOption in templateOptions"
+                  :key="templateOption.label"
+                  class="flex w-full items-center justify-between gap-3 px-4 py-2 text-left transition hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-200"
+                  type="button"
+                  @click="applyTemplate(templateOption.content)"
+                >
+                  <span>{{ templateOption.label }}</span>
+                  <span class="text-xs text-gray-400 dark:text-gray-500">{{ templateOption.type }}</span>
+                </button>
+              </div>
+            </transition>
           </div>
         </div>
         <div class="flex-1 overflow-hidden">
@@ -89,7 +156,7 @@
             class="relative flex min-h-full w-full items-start justify-center rounded-3xl border border-white/60 bg-gradient-to-br from-white/80 via-white/60 to-white/20 p-8 shadow-2xl ring-1 ring-black/5 transition dark:border-gray-800/60 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-800/40 dark:ring-white/10"
           >
             <div v-if="!hasDiagram && !errorMessage" class="w-full text-center text-sm text-gray-500 dark:text-gray-400">
-              点击「渲染图表」按钮，即可在此处预览 SVG。
+              编辑左侧代码后，将自动在此处渲染 SVG 预览。
             </div>
             <div
               v-if="errorMessage"
@@ -97,7 +164,13 @@
             >
               {{ errorMessage }}
             </div>
-            <div ref="diagramRef" class="flex w-full justify-center"></div>
+            <div ref="diagramRef" class="canvas-grid relative flex w-full justify-center rounded-2xl p-4"></div>
+            <div
+              v-if="isRendering"
+              class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-3xl bg-white/60 text-sm text-gray-500 backdrop-blur-sm dark:bg-gray-900/60 dark:text-gray-300"
+            >
+              渲染中…
+            </div>
           </div>
         </div>
       </section>
@@ -106,7 +179,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import mermaid from 'mermaid'
 
 const STORAGE_KEY = 'ddcherry-viewer:mermaid-code'
@@ -121,18 +194,75 @@ const DEFAULT_EXAMPLE = `graph TD;
 const containerRef = ref(null)
 const diagramRef = ref(null)
 const lineNumbersRef = ref(null)
+const toolbarRef = ref(null)
 const code = ref(DEFAULT_EXAMPLE)
 const theme = ref('default')
 const errorMessage = ref('')
 const isRendering = ref(false)
 const renderedSvg = ref('')
+const showThemeMenu = ref(false)
+const showTemplateMenu = ref(false)
 let mounted = false
+let renderTimer = null
 
 const themes = [
   { value: 'default', label: 'Default' },
   { value: 'dark', label: 'Dark' },
   { value: 'forest', label: 'Forest' },
   { value: 'neutral', label: 'Neutral' }
+]
+
+const templateOptions = [
+  {
+    label: '基础流程图',
+    type: 'Flowchart',
+    content: `graph TD;
+  A[开始] --> B{条件判断};
+  B -- 是 --> C[处理 1];
+  B -- 否 --> D[处理 2];
+  C --> E[结束];
+  D --> E;`
+  },
+  {
+    label: '看板示例',
+    type: 'Kanban',
+    content: `flowchart LR;
+  classDef column fill:#f5f5f5,stroke:#d1d5db,color:#111;
+  backlog[(待办)]:::column --> doing[(进行中)]:::column --> done[(已完成)]:::column;
+  subgraph backlog[ ]
+    A[需求评审]
+    B[原型设计]
+  end
+  subgraph doing[ ]
+    C[接口联调]
+  end
+  subgraph done[ ]
+    D[上线验收]
+  end;`
+  },
+  {
+    label: '序列图',
+    type: 'Sequence',
+    content: `sequenceDiagram
+  participant 用户
+  participant 系统
+  用户->>系统: 提交请求
+  系统-->>用户: 返回结果
+  用户->>系统: 确认完成;`
+  },
+  {
+    label: '甘特图',
+    type: 'Gantt',
+    content: `gantt
+  dateFormat  YYYY-MM-DD
+  title 项目计划
+  section 规划阶段
+    需求分析           :done,    des1, 2024-01-01,2024-01-05
+    方案设计           :active,  des2, 2024-01-06, 5d
+  section 执行阶段
+    开发实现           :         des3, after des2, 7d
+    测试验收           :         des4, after des3, 4d;`
+  }
 ]
 
 const hasDiagram = computed(() => Boolean(renderedSvg.value))
@@ -144,6 +274,17 @@ const lineNumbers = computed(() => {
 function syncScroll(event) {
   if (!lineNumbersRef.value) return
   lineNumbersRef.value.scrollTop = event.target.scrollTop
+}
+
+function scheduleRender() {
+  if (renderTimer) {
+    window.clearTimeout(renderTimer)
+  }
+
+  renderTimer = window.setTimeout(() => {
+    renderTimer = null
+    renderDiagram()
+  }, 300)
 }
 
 function loadPersistedState() {
@@ -169,6 +310,19 @@ function persistState(key, value) {
 async function renderDiagram() {
   if (!containerRef.value || !diagramRef.value) return
 
+  if (renderTimer) {
+    window.clearTimeout(renderTimer)
+    renderTimer = null
+  }
+
+  if (!code.value.trim()) {
+    renderedSvg.value = ''
+    diagramRef.value.innerHTML = ''
+    errorMessage.value = ''
+    isRendering.value = false
+    return
+  }
+
   isRendering.value = true
   errorMessage.value = ''
 
@@ -189,11 +343,6 @@ async function renderDiagram() {
   } finally {
     isRendering.value = false
   }
-}
-
-function resetToExample() {
-  code.value = DEFAULT_EXAMPLE
-  renderDiagram()
 }
 
 function downloadBlob(data, type, filename) {
@@ -340,11 +489,77 @@ function applyThemeToDocument(value) {
   document.documentElement.dataset.mermaidTheme = value
 }
 
+function formatCode() {
+  const lines = code.value.split('\n')
+  let indentLevel = 0
+  const indentSize = 2
+  const formatted = lines.map((line) => {
+    const trimmed = line.trim()
+
+    if (!trimmed) {
+      return ''
+    }
+
+    const lowered = trimmed.toLowerCase()
+    const decreaseBefore = /^(end|else|elif|case|when|catch|\}|\]|>)/.test(lowered)
+
+    if (decreaseBefore) {
+      indentLevel = Math.max(indentLevel - 1, 0)
+    }
+
+    const indent = ' '.repeat(indentLevel * indentSize)
+    const result = `${indent}${trimmed}`
+
+    const increaseAfter = /^(subgraph|loop|opt|alt|rect|par|state|section|case|when)\b/.test(lowered) || /\{\s*$/.test(trimmed)
+
+    if (increaseAfter && !/\bend\b$/.test(lowered)) {
+      indentLevel += 1
+    }
+
+    return result
+  })
+
+  code.value = formatted.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+}
+
+function toggleThemeMenu() {
+  showThemeMenu.value = !showThemeMenu.value
+  if (showThemeMenu.value) {
+    showTemplateMenu.value = false
+  }
+}
+
+function toggleTemplateMenu() {
+  showTemplateMenu.value = !showTemplateMenu.value
+  if (showTemplateMenu.value) {
+    showThemeMenu.value = false
+  }
+}
+
+function selectTheme(value) {
+  theme.value = value
+  showThemeMenu.value = false
+}
+
+function applyTemplate(templateContent) {
+  code.value = templateContent
+  showTemplateMenu.value = false
+}
+
+function handleGlobalClick(event) {
+  if (!toolbarRef.value) return
+  if (!toolbarRef.value.contains(event.target)) {
+    showThemeMenu.value = false
+    showTemplateMenu.value = false
+  }
+}
+
 watch(
   code,
   (value) => {
     if (!mounted) return
     persistState(STORAGE_KEY, value)
+    scheduleRender()
   }
 )
 
@@ -354,7 +569,7 @@ watch(
     if (!mounted) return
     persistState(THEME_KEY, value)
     applyThemeToDocument(value)
-    renderDiagram()
+    scheduleRender()
   }
 )
 
@@ -362,7 +577,16 @@ onMounted(() => {
   mounted = true
   loadPersistedState()
   applyThemeToDocument(theme.value)
+  document.addEventListener('click', handleGlobalClick)
   renderDiagram()
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleGlobalClick)
+  if (renderTimer) {
+    window.clearTimeout(renderTimer)
+    renderTimer = null
+  }
 })
 </script>
 
@@ -385,5 +609,35 @@ onMounted(() => {
 
 .animate-fadeIn svg {
   animation: fadeIn 0.5s ease-in-out;
+}
+
+.canvas-grid {
+  background-image: linear-gradient(
+      to right,
+      rgba(148, 163, 184, 0.2) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.2) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.dark .canvas-grid {
+  background-image: linear-gradient(
+      to right,
+      rgba(71, 85, 105, 0.35) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(71, 85, 105, 0.35) 1px, transparent 1px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>

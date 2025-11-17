@@ -19,6 +19,21 @@
           class="flex flex-wrap items-center gap-2 border-b border-white/40 px-5 py-3 dark:border-gray-800/70"
         >
           <button
+            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-emerald-500/50 dark:hover:text-emerald-300"
+            type="button"
+            :class="{ 'cursor-not-allowed opacity-60 hover:translate-y-0 hover:border-transparent hover:text-gray-500 hover:shadow-sm': isSaving }"
+            :disabled="isSaving"
+            title="保存"
+            aria-label="保存"
+            @click.stop="handleSave"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14v11a2 2 0 01-2 2H7a2 2 0 01-2-2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 8l2-3h10l2 3" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6v6H9z" />
+            </svg>
+          </button>
+          <button
             class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:text-indigo-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-indigo-500/50 dark:hover:text-indigo-300"
             type="button"
             :disabled="!hasDiagram"
@@ -120,6 +135,15 @@
             </transition>
           </div>
         </div>
+        <transition name="fade">
+          <div
+            v-if="saveMessage"
+            class="mx-5 mt-3 rounded-xl border px-4 py-3 text-sm"
+            :class="saveMessageClass"
+          >
+            {{ saveMessage }}
+          </div>
+        </transition>
         <div class="flex-1 overflow-hidden">
           <div class="relative flex h-full w-full">
             <div
@@ -168,11 +192,86 @@
         </div>
       </section>
     </main>
+    <teleport to="body">
+      <transition name="fade">
+        <div
+          v-if="showLoginDialog"
+          class="fixed inset-0 z-30 flex items-center justify-center bg-slate-900/60 px-4 py-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div class="w-full max-w-md rounded-2xl border border-white/10 bg-white/95 p-6 shadow-2xl dark:border-gray-700/60 dark:bg-gray-900/90">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">登录以保存图表</h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">请输入账号信息以继续保存当前 Mermaid 代码。</p>
+              </div>
+              <button
+                class="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-200/60 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:hover:bg-gray-700/60 dark:hover:text-gray-200"
+                type="button"
+                :disabled="isLoggingIn"
+                aria-label="关闭登录窗口"
+                @click="closeLoginDialog"
+              >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form class="mt-6 space-y-4" @submit.prevent="submitLogin">
+              <div>
+                <label class="text-sm font-medium text-gray-600 dark:text-gray-300" for="login-username">用户名</label>
+                <input
+                  id="login-username"
+                  v-model.trim="loginForm.username"
+                  type="text"
+                  autocomplete="username"
+                  required
+                  class="mt-1 w-full rounded-xl border border-gray-200 bg-white/90 px-4 py-2.5 text-sm text-gray-700 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-100"
+                  placeholder="输入用户名"
+                />
+              </div>
+              <div>
+                <label class="text-sm font-medium text-gray-600 dark:text-gray-300" for="login-password">密码</label>
+                <input
+                  id="login-password"
+                  v-model.trim="loginForm.password"
+                  type="password"
+                  autocomplete="current-password"
+                  required
+                  class="mt-1 w-full rounded-xl border border-gray-200 bg-white/90 px-4 py-2.5 text-sm text-gray-700 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-100"
+                  placeholder="输入密码"
+                />
+              </div>
+              <div v-if="loginError" class="rounded-xl border border-red-200/70 bg-red-50/80 px-4 py-2 text-sm text-red-600 dark:border-red-500/40 dark:bg-red-900/30 dark:text-red-200">
+                {{ loginError }}
+              </div>
+              <button
+                class="flex w-full items-center justify-center rounded-xl border border-transparent bg-indigo-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-70"
+                type="submit"
+                :disabled="isLoggingIn"
+              >
+                <svg
+                  v-if="isLoggingIn"
+                  class="-ml-1 mr-2 h-4 w-4 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                {{ isLoggingIn ? '登录中…' : '登录' }}
+              </button>
+            </form>
+          </div>
+        </div>
+      </transition>
+    </teleport>
   </div>
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import mermaid from 'mermaid'
 
 const STORAGE_KEY = 'ddcherry-viewer:mermaid-code'
@@ -193,8 +292,16 @@ const theme = ref('default')
 const errorMessage = ref('')
 const isRendering = ref(false)
 const renderedSvg = ref('')
+const isSaving = ref(false)
 const showThemeMenu = ref(false)
 const showTemplateMenu = ref(false)
+const showLoginDialog = ref(false)
+const isLoggingIn = ref(false)
+const loginError = ref('')
+const loginForm = reactive({ username: '', password: '' })
+const currentUser = ref(null)
+const saveMessage = ref('')
+const saveMessageType = ref('info')
 let mounted = false
 let renderTimer = null
 
@@ -259,9 +366,21 @@ const templateOptions = [
 ]
 
 const hasDiagram = computed(() => Boolean(renderedSvg.value))
+const isLoggedIn = computed(() => Boolean(currentUser.value))
 const lineNumbers = computed(() => {
   const totalLines = code.value.split('\n').length
   return Array.from({ length: Math.max(totalLines, 1) }, (_, index) => index + 1)
+})
+
+const saveMessageClass = computed(() => {
+  switch (saveMessageType.value) {
+    case 'success':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-900/20 dark:text-emerald-200'
+    case 'error':
+      return 'border-red-200 bg-red-50 text-red-600 dark:border-red-500/40 dark:bg-red-900/30 dark:text-red-200'
+    default:
+      return 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/40 dark:bg-sky-900/30 dark:text-sky-200'
+  }
 })
 
 function syncScroll(event) {
@@ -278,6 +397,16 @@ function scheduleRender() {
     renderTimer = null
     renderDiagram()
   }, 300)
+}
+
+function setSaveStatus(type, message) {
+  saveMessageType.value = type
+  saveMessage.value = message
+}
+
+function clearSaveStatus() {
+  saveMessage.value = ''
+  saveMessageType.value = 'info'
 }
 
 function loadPersistedState() {
@@ -298,6 +427,182 @@ function loadPersistedState() {
 function persistState(key, value) {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(key, value)
+}
+
+async function validateMermaidCode() {
+  const content = code.value.trim()
+
+  if (!content) {
+    setSaveStatus('error', '无法保存：请先输入 Mermaid 代码。')
+    return false
+  }
+
+  try {
+    mermaid.initialize({ startOnLoad: false, theme: theme.value })
+    await mermaid.parse(content)
+    return true
+  } catch (error) {
+    const message = error?.str ?? error?.message ?? '未知错误'
+    setSaveStatus('error', `无法保存：Mermaid 代码存在错误（${message}）`)
+    return false
+  }
+}
+
+async function handleSave() {
+  if (isSaving.value || isLoggingIn.value) return
+
+  clearSaveStatus()
+
+  const isValid = await validateMermaidCode()
+  if (!isValid) {
+    return
+  }
+
+  if (!isLoggedIn.value) {
+    showLoginDialog.value = true
+    setSaveStatus('info', '请先登录以保存当前图表。')
+    return
+  }
+
+  await performSave({ skipValidation: true })
+}
+
+async function performSave({ skipValidation = false } = {}) {
+  if (isSaving.value) return
+
+  if (!skipValidation) {
+    const isValid = await validateMermaidCode()
+    if (!isValid) {
+      return
+    }
+  }
+
+  isSaving.value = true
+  setSaveStatus('info', '正在保存图表…')
+
+  try {
+    const result = await saveDiagramRequest({
+      code: code.value,
+      theme: theme.value,
+      svg: renderedSvg.value,
+      lastRenderedAt: new Date().toISOString()
+    })
+    setSaveStatus('success', result?.message ?? '保存成功。')
+  } catch (error) {
+    setSaveStatus('error', `保存失败：${error?.message ?? '接口暂未实现'}`)
+  } finally {
+    isSaving.value = false
+  }
+}
+
+async function saveDiagramRequest(payload) {
+  const response = await fetch('/api/diagrams', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload),
+    credentials: 'include'
+  })
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response)
+    throw new Error(message || `保存失败（${response.status}）`)
+  }
+
+  try {
+    return await response.json()
+  } catch (error) {
+    console.warn('解析保存接口响应失败', error)
+    return {}
+  }
+}
+
+async function submitLogin() {
+  if (isLoggingIn.value) return
+
+  loginError.value = ''
+
+  if (!loginForm.username || !loginForm.password) {
+    loginError.value = '请输入用户名和密码'
+    return
+  }
+
+  isLoggingIn.value = true
+
+  try {
+    const user = await loginUser({
+      username: loginForm.username,
+      password: loginForm.password
+    })
+    currentUser.value = user
+    showLoginDialog.value = false
+    loginForm.password = ''
+    await performSave()
+  } catch (error) {
+    loginError.value = error?.message ?? '登录失败：未知错误'
+  } finally {
+    isLoggingIn.value = false
+  }
+}
+
+function closeLoginDialog() {
+  if (isLoggingIn.value) return
+  showLoginDialog.value = false
+  loginForm.password = ''
+}
+
+async function loginUser(credentials) {
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(credentials),
+    credentials: 'include'
+  })
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response)
+    throw new Error(message || `登录失败（${response.status}）`)
+  }
+
+  try {
+    const data = await response.json()
+    return data?.user ?? { username: credentials.username }
+  } catch (error) {
+    console.warn('解析登录响应失败', error)
+    return { username: credentials.username }
+  }
+}
+
+async function checkSession() {
+  try {
+    const response = await fetch('/api/auth/session', {
+      method: 'GET',
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      return
+    }
+
+    const data = await response.json()
+    if (data?.user) {
+      currentUser.value = data.user
+    }
+  } catch (error) {
+    console.warn('会话状态检查失败', error)
+  }
+}
+
+async function extractErrorMessage(response) {
+  try {
+    const data = await response.json()
+    return data?.message ?? data?.error ?? ''
+  } catch (error) {
+    return ''
+  }
 }
 
 async function renderDiagram() {
@@ -551,6 +856,7 @@ watch(
   code,
   (value) => {
     if (!mounted) return
+    clearSaveStatus()
     persistState(STORAGE_KEY, value)
     scheduleRender()
   }
@@ -560,17 +866,25 @@ watch(
   theme,
   (value) => {
     if (!mounted) return
+    clearSaveStatus()
     persistState(THEME_KEY, value)
     applyThemeToDocument(value)
     scheduleRender()
   }
 )
 
+watch(showLoginDialog, (value) => {
+  if (value) {
+    loginError.value = ''
+  }
+})
+
 onMounted(() => {
   mounted = true
   loadPersistedState()
   applyThemeToDocument(theme.value)
   document.addEventListener('click', handleGlobalClick)
+  void checkSession()
   renderDiagram()
 })
 

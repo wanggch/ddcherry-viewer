@@ -15,13 +15,6 @@
     <main class="flex flex-1 flex-col overflow-hidden md:flex-row">
       <section class="flex w-full flex-col overflow-hidden border-b border-white/40 bg-white/60 backdrop-blur md:w-1/2 md:border-b-0 md:border-r dark:border-gray-800/80 dark:bg-gray-900/50">
         <div
-          class="flex items-center justify-between border-b border-white/40 px-5 py-4 text-gray-600 dark:border-gray-800/70 dark:text-gray-300"
-        >
-          <div>
-            <h2 class="text-sm font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">Mermaid 代码</h2>
-          </div>
-        </div>
-        <div
           ref="toolbarRef"
           class="flex flex-wrap items-center gap-2 border-b border-white/40 px-5 py-3 dark:border-gray-800/70"
         >
@@ -261,7 +254,7 @@ const templateOptions = [
     方案设计           :active,  des2, 2024-01-06, 5d
   section 执行阶段
     开发实现           :         des3, after des2, 7d
-    测试验收           :         des4, after des3, 4d;`
+    测试验收           :         des4, after des3, 4d`
   }
 ]
 

@@ -23,25 +23,30 @@
         </div>
         <div
           ref="toolbarRef"
-          class="flex flex-wrap items-center gap-2 border-b border-white/40 px-5 py-3 dark:border-gray-800/70"
+          class="flex flex-wrap items-center gap-1.5 border-b border-white/40 px-4 py-2 text-gray-600 dark:border-gray-800/70 dark:text-gray-300"
         >
           <button
-            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-emerald-500/50 dark:hover:text-emerald-300"
+            :class="[
+              toolbarButtonClass,
+              isSaving && 'cursor-not-allowed opacity-60 hover:translate-y-0 hover:border-transparent hover:text-gray-500'
+            ]"
             type="button"
-            :class="{ 'cursor-not-allowed opacity-60 hover:translate-y-0 hover:border-transparent hover:text-gray-500 hover:shadow-sm': isSaving }"
             :disabled="isSaving"
             title="保存"
             aria-label="保存"
             @click.stop="handleSave"
           >
             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14v11a2 2 0 01-2 2H7a2 2 0 01-2-2z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 8l2-3h10l2 3" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6v6H9z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h9l4 4v12a2 2 0 01-2 2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 3v5h8" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-8H7v8" />
             </svg>
           </button>
           <button
-            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:text-indigo-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-indigo-500/50 dark:hover:text-indigo-300"
+            :class="[
+              toolbarButtonClass,
+              !hasDiagram && 'cursor-not-allowed opacity-60 hover:translate-y-0 hover:border-transparent hover:text-gray-500'
+            ]"
             type="button"
             :disabled="!hasDiagram"
             title="导出 SVG"
@@ -49,12 +54,17 @@
             @click.stop="exportSvg"
           >
             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M7 10l5 5m0 0l5-5m-5 5V3" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 21h14" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-6" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 15l3 3 3-3" />
             </svg>
           </button>
           <button
-            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-300 hover:text-sky-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-sky-500/50 dark:hover:text-sky-300"
+            :class="[
+              toolbarButtonClass,
+              !hasDiagram && 'cursor-not-allowed opacity-60 hover:translate-y-0 hover:border-transparent hover:text-gray-500'
+            ]"
             type="button"
             :disabled="!hasDiagram"
             title="导出 PNG"
@@ -62,35 +72,46 @@
             @click.stop="exportPng"
           >
             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5l3.5-3.5m0 0L12 9.5m3.5 3.5H8" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+              <rect width="16" height="12" x="4" y="4" rx="2" />
+              <circle cx="9" cy="9" r="2" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="m21 15-3.5-3.5a2 2 0 00-2.828 0L9 17" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="m3 13 2.5-2.5a2 2 0 012.828 0L13 16" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v3" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="m9.5 20.5 2.5 2.5 2.5-2.5" />
             </svg>
           </button>
           <button
-            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-emerald-500/50 dark:hover:text-emerald-300"
+            :class="toolbarButtonClass"
             type="button"
             title="格式化代码"
             aria-label="格式化代码"
             @click.stop="formatCode"
           >
             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 4h12M6 8h6m-6 4h12m-6 4h6m-6 4h12" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="m18 16 4-4-4-4" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="m6 8-4 4 4 4" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="m14.5 4-5 16" />
             </svg>
           </button>
           <div class="relative">
             <button
-              class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:text-violet-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-violet-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-violet-500/50 dark:hover:text-violet-300"
+              :class="toolbarButtonClass"
               type="button"
               title="选择主题"
               aria-label="选择主题"
               @click.stop="toggleThemeMenu"
             >
               <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
-                />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19v2" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.22 4.22l1.42 1.42" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 18.36l1.42 1.42" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M1 12h2" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12h2" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.22 19.78l1.42-1.42" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 5.64l1.42-1.42" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9" />
               </svg>
             </button>
             <transition name="fade">
@@ -113,14 +134,17 @@
           </div>
           <div class="relative">
             <button
-              class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:text-amber-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-amber-500/50 dark:hover:text-amber-300"
+              :class="toolbarButtonClass"
               type="button"
               title="模板示例"
               aria-label="模板示例"
               @click.stop="toggleTemplateMenu"
             >
               <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" />
+                <rect width="8" height="8" x="3" y="3" rx="2" />
+                <rect width="8" height="8" x="13" y="3" rx="2" />
+                <rect width="8" height="8" x="3" y="13" rx="2" />
+                <rect width="8" height="8" x="13" y="13" rx="2" />
               </svg>
             </button>
             <transition name="fade">
@@ -371,6 +395,9 @@ const templateOptions = [
     测试验收           :         des4, after des3, 4d;`
   }
 ]
+
+const toolbarButtonClass =
+  'flex h-9 w-9 items-center justify-center rounded-lg border border-transparent bg-white/70 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-white hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:border-indigo-500/40 dark:hover:text-indigo-200'
 
 const hasDiagram = computed(() => Boolean(renderedSvg.value))
 const isLoggedIn = computed(() => Boolean(currentUser.value))

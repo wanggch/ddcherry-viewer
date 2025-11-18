@@ -787,11 +787,14 @@ async function exportPng() {
   try {
     const dataUrl = svgToDataUrl(svgElement)
     const image = await loadSvgImage(dataUrl)
-    const { width, height } = getSvgDimensions(svgElement)
+    const { width, height, minX, minY } = getSvgMetrics(svgElement)
+    const padding = 16
+    const exportWidth = width + padding * 2
+    const exportHeight = height + padding * 2
     const ratio = window.devicePixelRatio || 1
     const canvas = document.createElement('canvas')
-    canvas.width = Math.max(Math.round(width * ratio), 1)
-    canvas.height = Math.max(Math.round(height * ratio), 1)
+    canvas.width = Math.max(Math.round(exportWidth * ratio), 1)
+    canvas.height = Math.max(Math.round(exportHeight * ratio), 1)
     const context = canvas.getContext('2d')
 
     if (!context) {
@@ -799,8 +802,10 @@ async function exportPng() {
     }
 
     context.setTransform(ratio, 0, 0, ratio, 0, 0)
-    context.clearRect(0, 0, width, height)
-    context.drawImage(image, 0, 0, width, height)
+    const backgroundColor = getExportBackgroundColor()
+    context.fillStyle = backgroundColor
+    context.fillRect(0, 0, exportWidth, exportHeight)
+    context.drawImage(image, padding - minX, padding - minY, width, height)
 
     const pngBlob = await canvasToBlob(canvas)
     const pngUrl = URL.createObjectURL(pngBlob)
@@ -841,31 +846,57 @@ function sanitizeSvg(svgElement) {
   return clone
 }
 
-function getSvgDimensions(svgElement) {
+function getSvgMetrics(svgElement) {
+  const viewBox = parseViewBox(svgElement.getAttribute('viewBox'))
+  if (viewBox) {
+    return viewBox
+  }
+
   const width = parseSize(svgElement.getAttribute('width'))
   const height = parseSize(svgElement.getAttribute('height'))
 
   if (width && height) {
-    return { width, height }
+    return { width, height, minX: 0, minY: 0 }
   }
 
-  const viewBox = svgElement.getAttribute('viewBox')
-  if (viewBox) {
-    const values = viewBox.split(/[ ,]+/).map(Number)
-    if (values.length === 4) {
-      const [, , vbWidth, vbHeight] = values
-      if (vbWidth && vbHeight) {
-        return { width: vbWidth, height: vbHeight }
-      }
+  if (svgElement.getBBox) {
+    const bbox = svgElement.getBBox()
+    if (bbox?.width && bbox?.height) {
+      return { width: bbox.width, height: bbox.height, minX: bbox.x, minY: bbox.y }
     }
   }
 
   const rect = svgElement.getBoundingClientRect()
   if (rect.width && rect.height) {
-    return { width: rect.width, height: rect.height }
+    return { width: rect.width, height: rect.height, minX: 0, minY: 0 }
   }
 
-  return { width: 1024, height: 768 }
+  return { width: 1024, height: 768, minX: 0, minY: 0 }
+}
+
+function parseViewBox(value) {
+  if (!value) return null
+  const values = value.split(/[ ,]+/).map(Number)
+  if (values.length !== 4) return null
+  const [minX, minY, width, height] = values
+  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !width || !height) {
+    return null
+  }
+  return { width, height, minX, minY }
+}
+
+function getExportBackgroundColor() {
+  if (typeof window === 'undefined') {
+    return '#ffffff'
+  }
+  const target = diagramRef.value || containerRef.value
+  if (!target) return '#ffffff'
+  const style = window.getComputedStyle(target)
+  const color = style.backgroundColor || '#ffffff'
+  if (!color || color === 'rgba(0, 0, 0, 0)' || color === 'transparent') {
+    return '#ffffff'
+  }
+  return color
 }
 
 function parseSize(value) {

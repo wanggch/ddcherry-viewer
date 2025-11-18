@@ -13,11 +13,73 @@
     </header>
 
     <main class="flex flex-1 flex-col overflow-hidden md:flex-row">
-      <section class="flex w-full flex-col overflow-hidden border-b border-white/40 bg-white/60 backdrop-blur md:w-1/2 md:border-b-0 md:border-r dark:border-gray-800/80 dark:bg-gray-900/50">
+      <section
+        :class="[
+          'relative flex w-full flex-col overflow-hidden border-b border-white/40 bg-white/60 backdrop-blur md:w-1/2 md:border-b-0 md:border-r dark:border-gray-800/80 dark:bg-gray-900/50',
+          showHistoryPanel ? 'md:pl-[22rem]' : ''
+        ]"
+      >
+        <transition name="slide-panel">
+          <aside v-if="showHistoryPanel" class="history-panel" role="complementary" aria-label="历史记录">
+            <div class="flex items-center justify-between border-b border-white/40 px-4 py-3 text-sm font-medium text-gray-600 dark:border-gray-800/60 dark:text-gray-200">
+              <div>
+                <p class="text-base font-semibold text-gray-800 dark:text-gray-100">历史记录</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">按创建时间倒序排列</p>
+              </div>
+              <button
+                class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-200/70 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:hover:bg-gray-800/60 dark:hover:text-gray-200"
+                type="button"
+                aria-label="关闭历史面板"
+                @click.stop="closeHistoryPanel"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div ref="historyListRef" class="history-scroll" @scroll.passive="handleHistoryScroll">
+              <div v-if="!historyItems.length && !historyLoading" class="rounded-2xl border border-dashed border-gray-200/80 bg-white/70 p-4 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
+                暂无历史记录，保存后即可在此查看。
+              </div>
+              <button
+                v-for="entry in historyItems"
+                :key="entry.id"
+                class="history-item"
+                type="button"
+                @click="applyHistoryEntry(entry)"
+              >
+                <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                  <span>{{ entry.displayDate }}</span>
+                  <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-200">{{ entry.themeLabel }}</span>
+                </div>
+                <p class="mt-1 text-left text-sm font-semibold text-gray-800 dark:text-gray-100">
+                  {{ entry.title }}
+                </p>
+                <p class="mt-1 truncate text-left text-xs text-gray-500 dark:text-gray-400">
+                  {{ entry.preview }}
+                </p>
+              </button>
+              <div v-if="historyLoading" class="py-3 text-center text-xs text-gray-500 dark:text-gray-400">加载中…</div>
+              <div v-else-if="!historyHasMore && historyItems.length" class="py-3 text-center text-xs text-gray-400">已显示全部</div>
+            </div>
+          </aside>
+        </transition>
         <div
           ref="toolbarRef"
           class="flex flex-wrap items-center gap-2 border-b border-white/40 px-5 py-3 dark:border-gray-800/70"
         >
+          <button
+            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-blue-500/50 dark:hover:text-blue-300"
+            type="button"
+            title="打开历史"
+            aria-label="打开历史"
+            @click.stop="toggleHistoryPanel"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 12h6m-6 4h4M7 12h.01M7 16h.01" />
+            </svg>
+          </button>
           <button
             class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white/80 text-gray-500 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:bg-gray-900/70 dark:text-gray-400 dark:hover:border-emerald-500/50 dark:hover:text-emerald-300"
             type="button"
@@ -276,6 +338,8 @@ import mermaid from 'mermaid'
 
 const STORAGE_KEY = 'ddcherry-viewer:mermaid-code'
 const THEME_KEY = 'ddcherry-viewer:mermaid-theme'
+const HISTORY_KEY = 'ddcherry-viewer:history'
+const HISTORY_PAGE_SIZE = 8
 const DEFAULT_EXAMPLE = `graph TD;
   A[开始] --> B[处理]
   B --> C{条件?}
@@ -287,6 +351,7 @@ const containerRef = ref(null)
 const diagramRef = ref(null)
 const lineNumbersRef = ref(null)
 const toolbarRef = ref(null)
+const historyListRef = ref(null)
 const code = ref(DEFAULT_EXAMPLE)
 const theme = ref('default')
 const errorMessage = ref('')
@@ -295,6 +360,7 @@ const renderedSvg = ref('')
 const isSaving = ref(false)
 const showThemeMenu = ref(false)
 const showTemplateMenu = ref(false)
+const showHistoryPanel = ref(false)
 const showLoginDialog = ref(false)
 const isLoggingIn = ref(false)
 const loginError = ref('')
@@ -302,8 +368,13 @@ const loginForm = reactive({ username: '', password: '' })
 const currentUser = ref(null)
 const saveMessage = ref('')
 const saveMessageType = ref('info')
+const historyItems = ref([])
+const historyLoading = ref(false)
+const historyPage = ref(1)
+const historyHasMore = ref(true)
 let mounted = false
 let renderTimer = null
+let cachedHistory = []
 
 const themes = [
   { value: 'default', label: 'Default' },
@@ -382,6 +453,13 @@ const saveMessageClass = computed(() => {
       return 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/40 dark:bg-sky-900/30 dark:text-sky-200'
   }
 })
+
+const themeLabelMap = computed(() =>
+  themes.reduce((acc, item) => {
+    acc[item.value] = item.label
+    return acc
+  }, {})
+)
 
 function syncScroll(event) {
   if (!lineNumbersRef.value) return
@@ -488,6 +566,16 @@ async function performSave({ skipValidation = false } = {}) {
       lastRenderedAt: new Date().toISOString()
     })
     setSaveStatus('success', result?.message ?? '保存成功。')
+    persistHistoryEntry({
+      code: code.value,
+      theme: theme.value,
+      svg: renderedSvg.value,
+      createdAt: result?.createdAt ?? new Date().toISOString(),
+      title: result?.title
+    })
+    if (showHistoryPanel.value) {
+      void loadHistory({ reset: true })
+    }
   } catch (error) {
     setSaveStatus('error', `保存失败：${error?.message ?? '接口暂未实现'}`)
   } finally {
@@ -834,6 +922,18 @@ function toggleTemplateMenu() {
   }
 }
 
+function toggleHistoryPanel() {
+  showHistoryPanel.value = !showHistoryPanel.value
+  if (showHistoryPanel.value) {
+    showThemeMenu.value = false
+    showTemplateMenu.value = false
+  }
+}
+
+function closeHistoryPanel() {
+  showHistoryPanel.value = false
+}
+
 function selectTheme(value) {
   theme.value = value
   showThemeMenu.value = false
@@ -849,6 +949,117 @@ function handleGlobalClick(event) {
   if (!toolbarRef.value.contains(event.target)) {
     showThemeMenu.value = false
     showTemplateMenu.value = false
+  }
+}
+
+function readHistoryFromStorage() {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((item) => item && typeof item === 'object')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  } catch (error) {
+    console.warn('读取历史记录失败', error)
+    return []
+  }
+}
+
+function writeHistoryToStorage(list) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(HISTORY_KEY, JSON.stringify(list))
+}
+
+function createHistoryId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `history-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function summarizeCodeSnippet(value) {
+  const trimmed = value.trim()
+  if (!trimmed) return '未命名图表'
+  const firstLine = trimmed.split('\n')[0]
+  return firstLine.length > 40 ? `${firstLine.slice(0, 40)}…` : firstLine
+}
+
+function persistHistoryEntry({ code: codeContent, theme: themeValue, svg, createdAt, title }) {
+  if (!codeContent?.trim()) return
+  const list = readHistoryFromStorage()
+  const entry = {
+    id: createHistoryId(),
+    code: codeContent,
+    theme: themeValue,
+    svg,
+    createdAt: createdAt || new Date().toISOString(),
+    title: title || summarizeCodeSnippet(codeContent),
+    preview: codeContent.split('\n').slice(0, 3).join(' ')
+  }
+  list.unshift(entry)
+  const deduped = list.slice(0, 100)
+  writeHistoryToStorage(deduped)
+}
+
+function decorateHistoryEntry(entry) {
+  return {
+    ...entry,
+    displayDate: formatHistoryDate(entry.createdAt),
+    themeLabel: themeLabelMap.value[entry.theme] || entry.theme || 'Default',
+    preview: entry.preview || entry.code.split('\n').slice(0, 3).join(' '),
+    title: entry.title || summarizeCodeSnippet(entry.code)
+  }
+}
+
+function formatHistoryDate(value) {
+  if (!value) return '未知时间'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+async function loadHistory({ reset = false } = {}) {
+  if (historyLoading.value) return
+  if (!historyHasMore.value && !reset) return
+
+  historyLoading.value = true
+
+  if (reset) {
+    historyPage.value = 1
+    historyItems.value = []
+    historyHasMore.value = true
+    cachedHistory = readHistoryFromStorage()
+    if (historyListRef.value) {
+      historyListRef.value.scrollTop = 0
+    }
+  }
+
+  const start = (historyPage.value - 1) * HISTORY_PAGE_SIZE
+  const end = start + HISTORY_PAGE_SIZE
+  const slice = cachedHistory.slice(start, end).map(decorateHistoryEntry)
+  historyItems.value = historyItems.value.concat(slice)
+  historyHasMore.value = end < cachedHistory.length
+  historyPage.value += 1
+
+  historyLoading.value = false
+}
+
+function handleHistoryScroll(event) {
+  if (!historyHasMore.value || historyLoading.value) return
+  const target = event.target
+  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 40) {
+    void loadHistory()
+  }
+}
+
+function applyHistoryEntry(entry) {
+  if (!entry) return
+  code.value = entry.code
+  if (entry.theme && entry.theme !== theme.value) {
+    theme.value = entry.theme
   }
 }
 
@@ -876,6 +1087,12 @@ watch(
 watch(showLoginDialog, (value) => {
   if (value) {
     loginError.value = ''
+  }
+})
+
+watch(showHistoryPanel, (value) => {
+  if (value) {
+    void loadHistory({ reset: true })
   }
 })
 
@@ -946,5 +1163,66 @@ onBeforeUnmount(() => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+.history-panel {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: min(22rem, 100%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.15);
+}
+
+.dark .history-panel {
+  border-color: rgba(15, 23, 42, 0.5);
+  background-color: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.55);
+}
+
+.history-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.history-item {
+  width: 100%;
+  text-align: left;
+  border-radius: 1rem;
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  background: rgba(248, 250, 252, 0.9);
+  padding: 0.85rem 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.history-item:hover,
+.history-item:focus-visible {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.dark .history-item {
+  border-color: rgba(51, 65, 85, 0.7);
+  background: rgba(30, 41, 59, 0.7);
+}
+
+.slide-panel-enter-active,
+.slide-panel-leave-active {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.slide-panel-enter-from,
+.slide-panel-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
 }
 </style>
